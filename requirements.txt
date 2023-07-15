@@ -1,7 +1,11 @@
+fastapi[all] 
 numpy
 pandas
+pydantic
 scikit-learn 
+typing-extensions
 uvicorn
 xgboost 
 
+ 
  
