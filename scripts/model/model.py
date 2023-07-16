@@ -4,9 +4,8 @@ import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import QuantileTransformer
-from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, recall_score
 import pickle
-import os
 
 
 def load_model(weights_path: str):
@@ -172,8 +171,10 @@ def evaluate_model(model, x, y_true):
 
     accuracy = accuracy_score(y_true, y_pred)
     auc = roc_auc_score(y_true, y_prob)
+    precision = precision_score(y_true, y_pred)
+    recall = recall_score(y_true, y_pred)
 
-    metrics = {'Accuracy': accuracy, 'AUC': auc}
+    metrics = {'Accuracy': accuracy, 'AUC': auc, 'Precision': precision, 'Recall': recall}
     return metrics
 
 
@@ -245,6 +246,8 @@ def predict(model, scaler, df: pd.DataFrame):
     return predictions, prediction_scores
 
 
+import os
+
 def main():
     input_csv = "../../data/CRANK_MS.csv"
     save_path = "../../data/weights/"
@@ -260,4 +263,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
