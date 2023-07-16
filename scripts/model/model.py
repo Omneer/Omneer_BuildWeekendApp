@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.metrics import accuracy_score, roc_auc_score
 import pickle
+import os
 
 
 def load_model(weights_path: str):
@@ -194,7 +195,7 @@ def train_e2e(input_csv, save_path):
     x_train, x_test, y_train, y_test = split_train_test(x, y)
 
     # Fit and save the scaler
-    scaler = QuantileTransformer(output_distribution='normal')
+    scaler = QuantileTransformer(output_distribution='uniform')
     scaler.fit(x_train)
     save_scaler(scaler, save_path)
 
@@ -245,8 +246,11 @@ def predict(model, scaler, df: pd.DataFrame):
 
 
 def main():
-    input_csv = input("Enter the path to the input CSV file: ")
-    save_path = input("Enter the directory path to save the model and scaler: ")
+    input_csv = "../../data/CRANK_MS.csv"
+    save_path = "../../data/weights/"
+
+    # Create the save directory if it doesn't exist
+    os.makedirs(save_path, exist_ok=True)
 
     model, x_train, x_test, y_train, y_test, scaler = train_e2e(input_csv, save_path)
 
@@ -256,3 +260,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
