@@ -29,4 +29,5 @@ def evaluate_model(model: XGBClassifier, x_test: np.ndarray, y_test: np.ndarray)
 
     precision = report["weighted avg"]["precision"]
     recall = report["weighted avg"]["recall"]
+    
     return precision, recall, auc_score
