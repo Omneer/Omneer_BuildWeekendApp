@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 import pandas as pd
+from fastapi.middleware.cors import CORSMiddleware
 
 from scripts.model.model import load_model, load_scaler, predict
 from scripts.apis.api_models import ModelPredictions
@@ -12,6 +13,18 @@ model = load_model(MODEL_PATH)
 scaler = load_scaler(SCALER_PATH)
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000",  # React app's origin
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/api/v1/predict", response_model=ModelPredictions)
 async def make_prediction(file: UploadFile = File(...)):
