@@ -44,13 +44,50 @@ def preprocess_features(xs: pd.DataFrame):
     """
     Preprocess the independent features by fitting a StandardScaler.
 
-    :param x_train: Training data
-    :param x_test: Test data
-    :return: Transformed training and testing data.
+    :param xs: Training data
+    :return: Scaler object and transformed training data.
     """
-    norm_obj = StandardScaler().fit(xs)
-    xs = norm_obj.transform(xs)
-    return xs
+    scaler = StandardScaler().fit(xs)
+    xs = scaler.transform(xs)
+    return scaler, xs
+
+def train_e2e(input_csv, save_path):
+    # Load the data
+    df = load_csv_to_dataframe(input_csv)
+
+    # Split into features and target
+    x, y = split_features_target(df)
+
+    # Split into training and test set
+    x_train, x_test, y_train, y_test = split_train_test(x, y)
+
+    # Preprocess the features
+    scaler, x_train = preprocess_features(x_train)
+    x_test = scaler.transform(x_test)
+
+    # Convert labels to integers
+    y_train, y_test = convert_labels_to_int(y_train, y_test)
+
+    # Train the model
+    model = train_model(x_train, y_train)
+
+    # Save the model and scaler
+    save_model(model, save_path, filename="xgboost_weights.pkl")
+    save_model(scaler, save_path, filename="scaler.pkl")
+
+    return model, scaler, x_train, x_test, y_train, y_test
+
+# def preprocess_features(xs: pd.DataFrame):
+#     """
+#     Preprocess the independent features by fitting a StandardScaler.
+
+#     :param x_train: Training data
+#     :param x_test: Test data
+#     :return: Transformed training and testing data.
+#     """
+#     norm_obj = StandardScaler().fit(xs)
+#     xs = norm_obj.transform(xs)
+#     return xs
 
 def split_train_test(x: pd.DataFrame, y: pd.Series, train_size: float = 0.8, seed: int = 42): 
     """
@@ -119,56 +156,69 @@ def save_model(model, dir_path: str, filename: str = "xgboost_weights.pkl"):
     print(f'Model saved at: {file_path}')
 
 
-def train_e2e(input_csv, save_path):
-    # Load the data
-    df = load_csv_to_dataframe(input_csv)
+# def train_e2e(input_csv, save_path):
+#     # Load the data
+#     df = load_csv_to_dataframe(input_csv)
 
+#     # Split into features and target
+#     x, y = split_features_target(df)
+
+#     # Split into training and test set
+#     x_train, x_test, y_train, y_test = split_train_test(x, y)
+
+#     # Preprocess the features
+#     x_train = preprocess_features(x_train)
+#     x_test = preprocess_features(x_test)
+
+#     # Convert labels to integers
+#     y_train, y_test = convert_labels_to_int(y_train, y_test)
+
+#     # Train the model
+#     model = train_model(x_train, y_train)
+
+#     # Save the model
+#     save_model(model, save_path)
+
+#     # You can now use the model to make predictions
+#     # predictions = model.predict(x_test)
+#     return model, x_train, x_test, y_train, y_test
+
+
+# def predict(model, df: pd.DataFrame):
+#     # Split into features and target
+#     x, y = split_features_target(df)
+
+#     # Preprocess the features
+#     x = preprocess_features(x)
+
+#     # Make predictions
+#     predictions = model.predict(x)
+#     prediction_scores = model.predict_proba(x)[:, 1]  # assuming binary classification
+
+#     # You can now use the model to make predictions
+#     # predictions = model.predict(x_test)
+#     return predictions, prediction_scores
+
+
+# def predict(model, df: pd.DataFrame):
+#     # Split into features and target
+#     x, y = split_features_target(df)
+
+#     # Preprocess the features
+#     x = preprocess_features(x)
+
+#     # Make predictions
+#     predictions = model.predict(x)
+#     prediction_scores = model.predict_proba(x)[:, 1]  # assuming binary classification
+
+#     return predictions, prediction_scores
+
+def predict(model, scaler, df: pd.DataFrame):
     # Split into features and target
     x, y = split_features_target(df)
 
-    # Split into training and test set
-    x_train, x_test, y_train, y_test = split_train_test(x, y)
-
     # Preprocess the features
-    x_train = preprocess_features(x_train)
-    x_test = preprocess_features(x_test)
-
-    # Convert labels to integers
-    y_train, y_test = convert_labels_to_int(y_train, y_test)
-
-    # Train the model
-    model = train_model(x_train, y_train)
-
-    # Save the model
-    save_model(model, save_path)
-
-    # You can now use the model to make predictions
-    # predictions = model.predict(x_test)
-    return model, x_train, x_test, y_train, y_test
-
-
-def predict(model, df: pd.DataFrame):
-    # Split into features and target
-    x, y = split_features_target(df)
-
-    # Preprocess the features
-    x = preprocess_features(x)
-
-    # Make predictions
-    predictions = model.predict(x)
-    prediction_scores = model.predict_proba(x)[:, 1]  # assuming binary classification
-
-    # You can now use the model to make predictions
-    # predictions = model.predict(x_test)
-    return predictions, prediction_scores
-
-
-def predict(model, df: pd.DataFrame):
-    # Split into features and target
-    x, y = split_features_target(df)
-
-    # Preprocess the features
-    x = preprocess_features(x)
+    x = scaler.transform(x)
 
     # Make predictions
     predictions = model.predict(x)
