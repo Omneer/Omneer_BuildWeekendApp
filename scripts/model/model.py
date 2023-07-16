@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import QuantileTransformer
 import pickle
 
 
@@ -24,7 +24,7 @@ def save_model(model, dir_path: str, filename: str = "xgboost_weights.pkl"):
     Save the trained model and scaler.
 
     :param model: The trained model.
-    :param scaler: The StandardScaler object.
+    :param scaler: The QuantileTransformer object.
     :param dir_path: The directory path to save the model.
     :param filename: The name of the file.
     """
@@ -62,12 +62,12 @@ def split_features_target(df: pd.DataFrame):
     return x, y
 
 
-def preprocess_features(xs: pd.DataFrame, scaler: StandardScaler):
+def preprocess_features(xs: pd.DataFrame, scaler: QuantileTransformer):
     """
     Preprocess the independent features using the given scaler.
 
     :param xs: Independent features.
-    :param scaler: The StandardScaler object.
+    :param scaler: The QuantileTransformer object.
     :return: Transformed independent features.
     """
     xs = scaler.transform(xs)
@@ -126,9 +126,9 @@ def train_model(x_train: pd.DataFrame, y_train: pd.Series):
 
 def save_scaler(scaler, dir_path: str, filename: str = "scaler.pkl"):
     """
-    Save the StandardScaler object.
+    Save the QuantileTransformer object.
 
-    :param scaler: The StandardScaler object.
+    :param scaler: The QuantileTransformer object.
     :param dir_path: The directory path to save the scaler.
     :param filename: The name of the file.
     """
@@ -146,7 +146,7 @@ def save_scaler(scaler, dir_path: str, filename: str = "scaler.pkl"):
 
 def load_scaler(scaler_path: str):
     """
-    Load the StandardScaler object from a pickle file.
+    Load the QuantileTransformer object from a pickle file.
 
     :param scaler_path: The directory path to the saved scaler.
     :return: The loaded scaler object.
@@ -174,7 +174,7 @@ def train_e2e(input_csv, save_path):
     x_train, x_test, y_train, y_test = split_train_test(x, y)
 
     # Fit and save the scaler
-    scaler = StandardScaler()
+    scaler = QuantileTransformer(output_distribution='normal')
     scaler.fit(x_train)
     save_scaler(scaler, save_path)
 
@@ -201,7 +201,7 @@ def predict(model, scaler, df: pd.DataFrame):
     Use the trained model and scaler to make predictions.
 
     :param model: The trained model.
-    :param scaler: The StandardScaler object.
+    :param scaler: The QuantileTransformer object.
     :param df: Input DataFrame for predictions.
     :return: Predicted labels and prediction scores.
     """
@@ -216,3 +216,17 @@ def predict(model, scaler, df: pd.DataFrame):
     prediction_scores = model.predict_proba(x)[:, 1]  # assuming binary classification
 
     return predictions, prediction_scores
+
+
+def main():
+    input_csv = input("Enter the path to the input CSV file: ")
+    save_path = input("Enter the directory path to save the model and scaler: ")
+
+    model, x_train, x_test, y_train, y_test, scaler = train_e2e(input_csv, save_path)
+
+    print("Training complete. Model and scaler saved.")
+    print("You can now use the model and scaler to make predictions.")
+
+
+if __name__ == "__main__":
+    main()

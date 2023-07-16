@@ -13,7 +13,6 @@ scaler = load_scaler(SCALER_PATH)
 
 app = FastAPI()
 
-
 @app.post("/api/v1/predict", response_model=ModelPredictions)
 async def make_prediction(file: UploadFile = File(...)):
     """
