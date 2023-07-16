@@ -14,17 +14,38 @@ def load_model(weights_path: str):
     :param weights_path: The directory path to the saved model weights.
     :return: The loaded model.
     """
-    with open(Path(weights_path), 'rb') as file:
-        model = pickle.load(file)
+    with open(Path(weights_path), 'rb') as f:
+        model = pickle.load(f)
     return model
+
+
+def save_model(model, dir_path: str, filename: str = "xgboost_weights.pkl"):
+    """
+    Save the trained model and scaler.
+
+    :param model: The trained model.
+    :param scaler: The StandardScaler object.
+    :param dir_path: The directory path to save the model.
+    :param filename: The name of the file.
+    """
+    # Check if the directory exists
+    dir_path = Path(dir_path)
+    dir_path.mkdir(parents=True, exist_ok=True)
+
+    # Save the model
+    file_path = dir_path / filename
+    with open(file_path, 'wb') as f:
+        pickle.dump(model, f)
+
+    print(f'Model saved at: {file_path}')
 
 
 def load_csv_to_dataframe(csv_path: str) -> pd.DataFrame:
     """
-    Load a CSV file into a pandas DataFrame.
+    Load a csv file into a pandas DataFrame.
 
-    :param csv_path: String path to the CSV file.
-    :return: A pandas DataFrame containing the CSV data.
+    :param csv_path: String path to the csv file.
+    :return: A pandas DataFrame containing the csv data.
     """
     return pd.read_csv(Path(csv_path))
 
@@ -41,15 +62,15 @@ def split_features_target(df: pd.DataFrame):
     return x, y
 
 
-def preprocess_features(xs: pd.DataFrame):
+def preprocess_features(xs: pd.DataFrame, scaler: StandardScaler):
     """
-    Preprocess the independent features by fitting a StandardScaler.
+    Preprocess the independent features using the given scaler.
 
     :param xs: Independent features.
+    :param scaler: The StandardScaler object.
     :return: Transformed independent features.
     """
-    norm_obj = StandardScaler().fit(xs)
-    xs = norm_obj.transform(xs)
+    xs = scaler.transform(xs)
     return xs
 
 
@@ -71,9 +92,9 @@ def convert_labels_to_int(y_train: pd.Series, y_test: pd.Series):
     """
     Convert labels to integer type.
 
-    :param y_train: Training labels.
-    :param y_test: Test labels.
-    :return: Labels converted to integers.
+    :param y_train: Training labels
+    :param y_test: Test labels
+    :return: Labels converted to integers
     """
     y_train = y_train.astype(np.int32)
     y_test = y_test.astype(np.int32)
@@ -103,33 +124,45 @@ def train_model(x_train: pd.DataFrame, y_train: pd.Series):
     return model
 
 
-def save_model(model, dir_path: str, filename: str = "xgboost_weights.pkl"):
+def save_scaler(scaler, dir_path: str, filename: str = "scaler.pkl"):
     """
-    Save the trained model weights.
+    Save the StandardScaler object.
 
-    :param model: The trained model.
-    :param dir_path: The directory path to save the model.
+    :param scaler: The StandardScaler object.
+    :param dir_path: The directory path to save the scaler.
     :param filename: The name of the file.
     """
     # Check if the directory exists
     dir_path = Path(dir_path)
     dir_path.mkdir(parents=True, exist_ok=True)
 
-    # Save the model
+    # Save the scaler
     file_path = dir_path / filename
-    with open(file_path, 'wb') as file:
-        pickle.dump(model, file)
+    with open(file_path, 'wb') as f:
+        pickle.dump(scaler, f)
 
-    print(f'Model saved at: {file_path}')
+    print(f'Scaler saved at: {file_path}')
+
+
+def load_scaler(scaler_path: str):
+    """
+    Load the StandardScaler object from a pickle file.
+
+    :param scaler_path: The directory path to the saved scaler.
+    :return: The loaded scaler object.
+    """
+    with open(Path(scaler_path), 'rb') as f:
+        scaler = pickle.load(f)
+    return scaler
 
 
 def train_e2e(input_csv, save_path):
     """
-    Load data, preprocess features, train the model, and save it.
+    Load data, preprocess features, train the model, and save the model and scaler.
 
     :param input_csv: Path to the input CSV file.
-    :param save_path: Directory path to save the model.
-    :return: The trained model, training and testing data.
+    :param save_path: Directory path to save the model and scaler.
+    :return: The trained model, training and testing data, and the scaler.
     """
     # Load the data
     df = load_csv_to_dataframe(input_csv)
@@ -140,9 +173,14 @@ def train_e2e(input_csv, save_path):
     # Split into training and test set
     x_train, x_test, y_train, y_test = split_train_test(x, y)
 
+    # Fit and save the scaler
+    scaler = StandardScaler()
+    scaler.fit(x_train)
+    save_scaler(scaler, save_path)
+
     # Preprocess the features
-    x_train = preprocess_features(x_train)
-    x_test = preprocess_features(x_test)
+    x_train = preprocess_features(x_train, scaler)
+    x_test = preprocess_features(x_test, scaler)
 
     # Convert labels to integers
     y_train, y_test = convert_labels_to_int(y_train, y_test)
@@ -153,16 +191,17 @@ def train_e2e(input_csv, save_path):
     # Save the model
     save_model(model, save_path)
 
-    # You can now use the model to make predictions
+    # You can now use the model and scaler to make predictions
     # predictions = model.predict(x_test)
-    return model, x_train, x_test, y_train, y_test
+    return model, x_train, x_test, y_train, y_test, scaler
 
 
-def predict(model, df: pd.DataFrame):
+def predict(model, scaler, df: pd.DataFrame):
     """
-    Use the trained model to make predictions.
+    Use the trained model and scaler to make predictions.
 
     :param model: The trained model.
+    :param scaler: The StandardScaler object.
     :param df: Input DataFrame for predictions.
     :return: Predicted labels and prediction scores.
     """
@@ -170,7 +209,7 @@ def predict(model, df: pd.DataFrame):
     x, y = split_features_target(df)
 
     # Preprocess the features
-    x = preprocess_features(x)
+    x = preprocess_features(x, scaler)
 
     # Make predictions
     predictions = model.predict(x)

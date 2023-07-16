@@ -1,12 +1,15 @@
 from fastapi import FastAPI, UploadFile, File
 import pandas as pd
 
-from scripts.model.model import load_model, predict
+from scripts.model.model import load_model, load_scaler, predict
 from scripts.apis.api_models import ModelPredictions
 
 
 MODEL_PATH = "/app/data/weights/xgboost_weights.pkl"
+SCALER_PATH = "/app/data/weights/scaler.pkl"
+
 model = load_model(MODEL_PATH)
+scaler = load_scaler(SCALER_PATH)
 
 app = FastAPI()
 
@@ -24,7 +27,7 @@ async def make_prediction(file: UploadFile = File(...)):
     # Read the CSV file to a DataFrame
     df = pd.read_csv(file.file)
 
-    predictions, prediction_scores = predict(model, df)
+    predictions, prediction_scores = predict(model, scaler, df)
 
     return ModelPredictions(
         predictions=predictions.tolist(),
