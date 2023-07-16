@@ -4,6 +4,7 @@ import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import QuantileTransformer
+from sklearn.metrics import accuracy_score, roc_auc_score
 import pickle
 
 
@@ -156,6 +157,25 @@ def load_scaler(scaler_path: str):
     return scaler
 
 
+def evaluate_model(model, x, y_true):
+    """
+    Evaluate the trained model on the test data.
+
+    :param model: The trained model.
+    :param x: The independent features for evaluation.
+    :param y_true: The true labels for evaluation.
+    :return: Dictionary containing evaluation metrics.
+    """
+    y_pred = model.predict(x)
+    y_prob = model.predict_proba(x)[:, 1]  # assuming binary classification
+
+    accuracy = accuracy_score(y_true, y_pred)
+    auc = roc_auc_score(y_true, y_prob)
+
+    metrics = {'Accuracy': accuracy, 'AUC': auc}
+    return metrics
+
+
 def train_e2e(input_csv, save_path):
     """
     Load data, preprocess features, train the model, and save the model and scaler.
@@ -187,6 +207,12 @@ def train_e2e(input_csv, save_path):
 
     # Train the model
     model = train_model(x_train, y_train)
+
+    # Evaluate the model
+    train_metrics = evaluate_model(model, x_train, y_train)
+    test_metrics = evaluate_model(model, x_test, y_test)
+    print("Training Metrics:", train_metrics)
+    print("Testing Metrics:", test_metrics)
 
     # Save the model
     save_model(model, save_path)

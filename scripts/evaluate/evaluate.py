@@ -1,33 +1,48 @@
-from typing import Tuple
-import numpy as np
-from sklearn.metrics import classification_report, roc_auc_score
-from xgboost import XGBClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score, classification_report
+from scripts.model.model import load_model, load_scaler, load_csv_to_dataframe, split_features_target, preprocess_features
 
-
-def evaluate_model(model: XGBClassifier, x_test: np.ndarray, y_test: np.ndarray) -> Tuple[float, float, float]:
-    """
-    Evaluate the model's performance.
-
-    :param model: The trained model.
-    :param x_test: Test data
-    :param y_test: Test labels
-    :return: Precision, recall, and AUC score.
-    """
-    # Predict on test data
+def evaluate_model(model, x_test, y_test):
+    """Evaluate the model on the test set and print the performance metrics."""
+    # Make predictions on the test set
     y_pred = model.predict(x_test)
 
-    # Print classification report
-    report = classification_report(y_test, y_pred, output_dict=True)
+    # Calculate accuracy
+    accuracy = accuracy_score(y_test, y_pred)
 
-    # Calculate the AUC score
-    auc_score = roc_auc_score(y_test, model.predict_proba(x_test)[:, 1])
-    
-    print("Classification Report:\n")
-    print(report)
+    # Calculate AUC score
+    auc_score = roc_auc_score(y_test, y_pred)
 
+    # Generate confusion matrix
+    conf_matrix = confusion_matrix(y_test, y_pred)
+
+    # Generate classification report
+    class_report = classification_report(y_test, y_pred)
+
+    print(f"Accuracy: {accuracy}")
     print(f"AUC Score: {auc_score}")
+    print("Confusion Matrix:")
+    print(conf_matrix)
+    print("Classification Report:")
+    print(class_report)
 
-    precision = report["weighted avg"]["precision"]
-    recall = report["weighted avg"]["recall"]
-    
-    return precision, recall, auc_score
+
+def main():
+    # Load the model and scaler
+    model = load_model("../../data/xgboost_weights.pkl")
+    scaler = load_scaler("../../data/scaler.pkl")
+
+    # Load the test data
+    test_df = load_csv_to_dataframe("../../CRANK_MS.csv")
+
+    # Split into features and target
+    x_test, y_test = split_features_target(test_df)
+
+    # Preprocess the features
+    x_test = preprocess_features(x_test, scaler)
+
+    # Evaluate the model
+    evaluate_model(model, x_test, y_test)
+
+
+if __name__ == "__main__":
+    main()
